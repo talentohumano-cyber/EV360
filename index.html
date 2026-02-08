@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación 360 - Fundación Mariana de Jesús</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-vino: #8E1537;  /* Pantone 1955 C */
+            --color-azul: #003151;  /* Pantone 296 C */
+            --color-amarillo: #FFBB33; /* Acento */
+            --blanco: #ffffff;
+            --gris-claro: #f4f4f4;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--gris-claro);
+            margin: 0;
+            padding: 20px;
+            color: var(--color-azul);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--blanco);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-top: 5px solid var(--color-vino);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* NUEVO: Estilos para el logo */
+        .logo-fmdj {
+            max-width: 180px;  /* Ajusta este número si lo quieres más grande o chico */
+            height: auto;
+            display: block;
+            margin: 0 auto 20px auto; /* Centrado y con espacio abajo */
+        }
+
+        h1 {
+            color: var(--color-vino);
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: var(--color-azul);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--color-vino);
+        }
+
+        /* Estilos para las preguntas (se generarán dinámicamente) */
+        .pregunta-card {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--color-amarillo);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <img src="logo.jpeg" alt="Logo Fundación Mariana de Jesús" class="logo-fmdj">
+            <h1>Evaluación de Desempeño 360°</h1>
+            <p>Fundación Mariana de Jesús</p>
+        </header>
+
+        <div id="seccion-identificacion">
+            <div class="form-group">
+                <label>1. Tu Correo (Evaluador):</label>
+                <input type="email" id="emailEvaluador" placeholder="tucorreo@fmdj.org">
+            </div>
+
+            <div class="form-group">
+                <label>2. Correo de la persona a evaluar:</label>
+                <input type="email" id="emailEvaluado" placeholder="correo.compañero@fmdj.org">
+                <small style="color: #666;">* Las preguntas dependerán del cargo de esta persona.</small>
+            </div>
+
+            <div class="form-group">
+                <label>3. ¿Qué relación tienes con esta persona?</label>
+                <select id="relacion">
+                    <option value="">-- Selecciona una opción --</option>
+                    <option value="Autoevaluación">Autoevaluación (Soy yo mismo)</option>
+                    <option value="Jefe Inmediato">Jefe Inmediato</option>
+                    <option value="Par">Par (Compañero del mismo nivel)</option>
+                    <option value="Subordinado">Subordinado (Es mi colaborador)</option>
+                    <option value="Cliente Interno">Cliente Interno</option>
+                </select>
+            </div>
+
+            <button onclick="cargarEvaluacion()">Comenzar Evaluación</button>
+        </div>
+
+        <div id="seccion-preguntas" style="display:none;">
+            <h2 id="titulo-cargo">Evaluando a: [Nombre]</h2>
+            <div id="contenedor-preguntas">
+                </div>
+            <div class="form-group" style="margin-top: 30px; border-top: 2px solid #ccc; padding-top: 20px;">
+                <label>Observaciones Adicionales / Comentarios Generales (Opcional):</label>
+                <textarea id="obsGeneral" rows="4" style="width: 100%; padding: 10px;" placeholder="Escribe aquí cualquier comentario global sobre el evaluado..."></textarea>
+            </div>
+            <button onclick="enviarRespuestas()">Enviar Evaluación</button>
+        </div>
+    </div>
+
+    <div id="seccion-agradecimiento" style="display:none; text-align: center; padding: 40px 20px;">
+        <div style="font-size: 60px; color: var(--color-vino); margin-bottom: 20px;">✓</div>
+        
+        <h2 style="color: var(--color-azul);">¡Evaluación Completada!</h2>
+        
+        <p style="font-size: 18px; color: #555;">
+            Muchas gracias por tu tiempo y objetividad al evaluar a:
+        </p>
+        
+        <h1 id="nombre-final-evaluado" style="color: var(--color-vino); margin: 20px 0; font-size: 28px;">
+            [Nombre Persona]
+        </h1>
+
+        <p style="margin-bottom: 30px;">
+            Tus respuestas y comentarios han sido registrados correctamente en el sistema.
+        </p>
+
+        <button onclick="location.reload()" style="max-width: 300px;">
+            Realizar otra evaluación
+        </button>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN ---
+        const URL_API = "https://script.google.com/macros/s/AKfycbyY7vwb47-qvgOVke-i1TjP9EkZ9HCGEUHbZ7KFG4vYL8ltHi4WBnay_RhK1qdY79DdIQ/exec"; // <--- ¡VUELVE A PEGAR TU URL AQUÍ!
+        let nombreEvaluadoActual = "";    // <--- AGREGA ESTA LÍNEA
+
+        function cargarEvaluacion() {
+            const email = document.getElementById('emailEvaluador').value;
+            if (!email) {
+                alert("Por favor escribe un correo");
+                return;
+            }
+
+            const btn = document.querySelector('button');
+            btn.textContent = "Cargando...";
+            btn.disabled = true;
+
+            // Petición al Backend
+            fetch(URL_API, {
+                method: 'POST',
+                mode: 'no-cors', // Truco para evitar bloqueo de Google, lee nota abajo
+                body: JSON.stringify({ accion: "obtenerPreguntas", email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    btn.textContent = "Comenzar Evaluación";
+                    btn.disabled = false;
+                } else {
+                    mostrarCuestionario(data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // NOTA TÉCNICA: Al usar 'no-cors' con Apps Script, a veces fetch falla en leer la respuesta
+                // directa pero sí ejecuta. Para este prototipo, usaremos un método alternativo si falla.
+                // Si ves este error, avísame y usamos el "truco del iframe" o "redirect".
+                alert("Hubo un error de conexión. Revisa la consola (F12) o intenta de nuevo.");
+                btn.textContent = "Comenzar Evaluación";
+                btn.disabled = false;
+            });
+        }
+
+        // Función auxiliar: Como 'no-cors' es complicado, usaremos un truco más simple para leer datos
+        // REEMPLAZO DE LA FUNCIÓN ANTERIOR PARA QUE FUNCIONE A LA PRIMERA:
+        
+        async function cargarEvaluacion() {
+            const emailEvaluador = document.getElementById('emailEvaluador').value;
+            const emailEvaluado = document.getElementById('emailEvaluado').value;
+            const relacion = document.getElementById('relacion').value;
+            const btn = document.querySelector('button');
+
+            // Validaciones básicas
+            if (!emailEvaluador || !emailEvaluado || !relacion) {
+                alert("Por favor completa todos los campos (Correos y Relación).");
+                return;
+            }
+
+            btn.textContent = "Buscando cargo del evaluado...";
+            
+            // OJO: Enviamos el email del EVALUADO para obtener SUS preguntas de cargo
+            const datosAEnviar = JSON.stringify({ 
+                accion: "obtenerPreguntas", 
+                email: emailEvaluado 
+            });
+            
+            try {
+                const response = await fetch(URL_API, {
+                    method: "POST",
+                    body: datosAEnviar
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert("Error: " + data.error + "\n(Verifica que el correo del EVALUADO esté en la lista de Colaboradores)");
+                    btn.textContent = "Comenzar Evaluación";
+                } else {
+                    mostrarCuestionario(data);
+                }
+            } catch (e) {
+                console.log(e);
+                alert("Error de conexión. Revisa que el script esté publicado.");
+                btn.textContent = "Comenzar Evaluación";
+            }
+        }
+
+        function mostrarCuestionario(data) {
+            // Guardamos el nombre en la variable global para usarlo al final
+            nombreEvaluadoActual = data.nombre; // <--- AGREGA ESTA LÍNEA
+            document.getElementById('seccion-identificacion').style.display = 'none';
+            document.getElementById('seccion-preguntas').style.display = 'block';
+            
+            document.getElementById('titulo-cargo').innerText = 
+                `Evaluando a: ${data.nombre} (${data.cargo})`;
+
+            const contenedor = document.getElementById('contenedor-preguntas');
+            contenedor.innerHTML = ""; 
+
+            data.preguntas.forEach((preg, index) => {
+                const htmlPregunta = `
+                    <div class="pregunta-card">
+                        <p><strong>${index + 1}. ${preg.texto}</strong></p>
+                        <small style="color: #666; display:block; margin-bottom:10px;">Criterio: ${preg.criterio}</small>
+                        
+                        <div style="margin-bottom:15px;">
+                            <label style="margin-right:15px;"><input type="radio" name="p-${preg.id}" value="1"> 1 (Bajo)</label>
+                            <label style="margin-right:15px;"><input type="radio" name="p-${preg.id}" value="2"> 2</label>
+                            <label style="margin-right:15px;"><input type="radio" name="p-${preg.id}" value="3"> 3</label>
+                            <label style="margin-right:15px;"><input type="radio" name="p-${preg.id}" value="4"> 4</label>
+                            <label style="margin-right:15px;"><input type="radio" name="p-${preg.id}" value="5"> 5 (Alto)</label>
+                        </div>
+
+                        <div>
+                            <input type="text" class="obs-pregunta" placeholder="Observación opcional para esta pregunta..." style="width: 95%; padding: 8px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                    </div>
+                `;
+                contenedor.innerHTML += htmlPregunta;
+            });
+        }
+
+        function enviarRespuestas() {
+            const emailEvaluador = document.getElementById('emailEvaluador').value;
+            const emailEvaluado = document.getElementById('emailEvaluado').value;
+            const relacion = document.getElementById('relacion').value;
+            // NUEVO: Capturar observación general
+            const obsGeneral = document.getElementById('obsGeneral').value;
+
+            const contenedor = document.getElementById('contenedor-preguntas');
+            const tarjetas = contenedor.getElementsByClassName('pregunta-card');
+            
+            let respuestas = [];
+            let faltan = false;
+
+            for (let card of tarjetas) {
+                const radio = card.querySelector('input[type="radio"]:checked');
+                // NUEVO: Capturar observación específica
+                const comentarioInput = card.querySelector('.obs-pregunta').value;
+
+                if (!radio) {
+                    card.style.borderLeft = "4px solid red";
+                    faltan = true;
+                } else {
+                    card.style.borderLeft = "4px solid #FFBB33";
+                    const idPregunta = radio.name.replace("p-", "");
+                    
+                    respuestas.push({
+                        id_pregunta: idPregunta,
+                        puntaje: radio.value,
+                        comentario: comentarioInput // Guardamos el texto
+                    });
+                }
+            }
+
+            if (faltan) {
+                alert("Por favor, responde todas las preguntas (los comentarios son opcionales).");
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="enviarRespuestas()"]');
+            btn.textContent = "Enviando...";
+            btn.disabled = true;
+
+            const payload = {
+                accion: "guardarEvaluacion",
+                emailEvaluador: emailEvaluador,
+                emailEvaluado: emailEvaluado,
+                relacion: relacion,
+                obsGeneral: obsGeneral, // Enviamos el comentario global
+                respuestas: respuestas
+            };
+
+            fetch(URL_API, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+            // OCULTAMOS las preguntas
+                document.getElementById('seccion-preguntas').style.display = 'none';
+            
+                // PREPARAMOS la pantalla de gracias
+                document.getElementById('nombre-final-evaluado').innerText = nombreEvaluadoActual;
+                document.getElementById('seccion-agradecimiento').style.display = 'block';
+            
+                // Ya no usamos alert() ni reload() inmediato
+                window.scrollTo(0, 0); // Subir la pantalla al inicio
+            })
+            .catch(e => {
+                console.error(e);
+                alert("Error al enviar.");
+                btn.textContent = "Enviar Evaluación";
+                btn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
